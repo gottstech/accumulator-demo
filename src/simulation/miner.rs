@@ -8,15 +8,16 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
+use std::fmt::Debug;
 
 /// A stateless miner in our system.
-pub struct Miner<G: UnknownOrderGroup, T: Clone + Hash> {
+pub struct Miner<G: UnknownOrderGroup, T: Clone + Hash + Debug> {
     acc: Accumulator<G, T>,
     block_height: u64,
     pending_transactions: Vec<Transaction<G, T>>,
 }
 
-impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + PartialEq + Send> Miner<G, T> {
+impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + Debug + PartialEq + Send> Miner<G, T> {
     /// Runs a miner's simulation loop.
     // Assumes all miners are online from genesis. We may want to implement syncing later.
     pub fn start(
@@ -92,7 +93,8 @@ impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + PartialEq + Send> Mi
         }
     }
 
-    fn validate_block(&mut self, block: Block<G, T>) {
+    fn validate_block(&mut self, block: Block<G, T>)
+    {
         // Preserves idempotency if multiple miners are leaders.
         if block.height != self.block_height + 1 {
             return;
@@ -111,8 +113,9 @@ impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + PartialEq + Send> Mi
             .acc_new
             .verify_membership_batch(&elems_added, &block.proof_added));
         assert!(block.proof_deleted.witness == block.proof_added.witness);
-        self.acc = block.acc_new;
+        self.acc = block.acc_new.clone();
         self.block_height = block.height;
         self.pending_transactions.clear();
+        println!("validate_block - block: {:#?}", block);
     }
 }

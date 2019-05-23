@@ -2,6 +2,7 @@ use accumulator::group::UnknownOrderGroup;
 use accumulator::{Accumulator, MembershipProof, Witness};
 use std::hash::Hash;
 use uuid::Uuid;
+use std::fmt::Debug;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 /// A UTXO, defined by a UUID and the user who owns it. Note that our UTXOs do not have an
@@ -14,7 +15,7 @@ pub struct Utxo {
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 /// A transaction, defined by UTXOs created and UTXOs spent. UTXOs being spent must come with a
 /// witness to prove that they are currently unspent.
-pub struct Transaction<G: UnknownOrderGroup, T: Hash> {
+pub struct Transaction<G: UnknownOrderGroup, T: Hash + Debug> {
     pub utxos_created: Vec<T>,
     pub utxos_spent_with_witnesses: Vec<(T, Witness<G, T>)>,
 }
@@ -22,7 +23,7 @@ pub struct Transaction<G: UnknownOrderGroup, T: Hash> {
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 /// A block, which gets cut by a miner. Blocks contain transactions, a new accumulator value, and
 /// proofs of correctness for the accumulator update.
-pub struct Block<G: UnknownOrderGroup, T: Hash> {
+pub struct Block<G: UnknownOrderGroup, T: Hash + Debug> {
     pub height: u64,
     pub transactions: Vec<Transaction<G, T>>,
     pub acc_new: Accumulator<G, T>,

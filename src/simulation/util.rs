@@ -2,10 +2,11 @@ use super::state::Transaction;
 use accumulator::group::UnknownOrderGroup;
 use accumulator::Witness;
 use std::hash::Hash;
+use std::fmt::Debug;
 
 #[allow(clippy::type_complexity)]
 /// Extracts the elements added and deleted in a set of `transactions`.
-pub fn elems_from_transactions<G: UnknownOrderGroup, T: Clone + Hash>(
+pub fn elems_from_transactions<G: UnknownOrderGroup, T: Clone + Hash + Debug>(
     transactions: &[Transaction<G, T>],
 ) -> (Vec<T>, Vec<(T, Witness<G, T>)>) {
     let mut elems_added = Vec::new();
