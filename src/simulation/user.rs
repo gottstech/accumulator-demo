@@ -51,7 +51,14 @@ impl User {
                             utxos: utxos_to_spend.clone(),
                         })
                         .unwrap();
-                    let response = witness_response_receiver.recv().unwrap();
+
+                    let response = loop {
+                        match witness_response_receiver.try_recv() {
+                            Ok(response) => break response,
+                            Err(_) => (),
+                        }
+                        sleep(Duration::from_millis(10));
+                    };
                     if response.request_id == witness_request_id {
                         break response;
                     }
@@ -85,11 +92,14 @@ impl User {
             // Keep processing UTXO updates from the bridge until one of them is non-empty (i.e. the
             // one we care about, pertaining to the UTXO we spent).
             loop {
-                let update = user_update_receiver.recv().unwrap();
-                if !update.is_empty() {
-                    user.update(update);
-                    break;
+                match user_update_receiver.try_recv() {
+                    Ok(update) => if !update.is_empty() {
+                        user.update(update);
+                        break;
+                    }
+                    Err(_) => (),
                 }
+                sleep(Duration::from_millis(10));
             }
         }
     }
