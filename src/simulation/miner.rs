@@ -36,20 +36,22 @@ impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + Debug + PartialEq + 
 
         // Transaction processor thread.
         let miner = miner_ref.clone();
-        let transaction_thread = thread::spawn(move || {
-            for tx in tx_receiver {
-                miner.lock().unwrap().add_transaction(tx);
-                sleep(Duration::from_millis(1));
+        let transaction_thread = thread::spawn(move || loop {
+            match tx_receiver.try_recv() {
+                Ok(tx) => miner.lock().unwrap().add_transaction(tx),
+                Err(_) => (),
             }
+            sleep(Duration::from_millis(10));
         });
 
         // Block validation thread.
         let miner = miner_ref.clone();
-        let validate_thread = thread::spawn(move || {
-            for block in block_receiver {
-                miner.lock().unwrap().validate_block(block);
-                sleep(Duration::from_millis(1));
+        let validate_thread = thread::spawn(move || loop {
+            match block_receiver.try_recv() {
+                Ok(block) => miner.lock().unwrap().validate_block(block),
+                Err(_) => (),
             }
+            sleep(Duration::from_millis(10));
         });
 
         // Block creation on an interval.

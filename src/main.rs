@@ -138,15 +138,16 @@ pub fn run_simulation<G: UnknownOrderGroup>() {
 
     tx_receiver.unsubscribe();
     println!("Simulation running.");
-    simulation_threads.push(thread::spawn(move || {
-        for block in block_receiver {
-            println!(
+    simulation_threads.push(thread::spawn(move || loop {
+        match block_receiver.try_recv() {
+            Ok(block) => println!(
                 "Block {} has {} transactions.",
                 block.height,
                 block.transactions.len()
-            );
-            sleep(Duration::from_millis(10));
+            ),
+            Err(_) => (),
         }
+        sleep(Duration::from_millis(10));
     }));
     for thread in simulation_threads {
         thread.join().unwrap();

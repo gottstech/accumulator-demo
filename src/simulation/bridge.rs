@@ -66,27 +66,31 @@ impl<G: UnknownOrderGroup> Bridge<G> {
 
         // Block updater thread.
         let bridge = bridge_ref.clone();
-        let update_thread = thread::spawn(move || {
-            for block in block_receiver {
-                bridge.lock().unwrap().update(block, &user_update_senders);
-                sleep(Duration::from_millis(10));
+        let update_thread = thread::spawn(move || loop {
+            match block_receiver.try_recv() {
+                Ok(block) => bridge.lock().unwrap().update(block, &user_update_senders),
+                Err(_) => (),
             }
+            sleep(Duration::from_millis(10));
         });
 
         // Witness request handler.
         let bridge = bridge_ref.clone();
-        let witness_thread = thread::spawn(move || {
-            for request in witness_request_receiver {
-                let bridge = bridge.lock().unwrap();
-                let utxos_with_witnesses = bridge.create_membership_witnesses(&request.utxos);
-                witness_response_senders[&request.user_id]
-                    .try_send(WitnessResponse {
-                        request_id: request.request_id,
-                        utxos_with_witnesses,
-                    })
-                    .unwrap();
-                sleep(Duration::from_millis(1));
+        let witness_thread = thread::spawn(move || loop {
+            match witness_request_receiver.try_recv() {
+                Ok(request) => {
+                    let bridge = bridge.lock().unwrap();
+                    let utxos_with_witnesses = bridge.create_membership_witnesses(&request.utxos);
+                    witness_response_senders[&request.user_id]
+                        .try_send(WitnessResponse {
+                            request_id: request.request_id,
+                            utxos_with_witnesses,
+                        })
+                        .unwrap();
+                }
+                Err(_) => (),
             }
+            sleep(Duration::from_millis(10));
         });
 
         update_thread.join().unwrap();
