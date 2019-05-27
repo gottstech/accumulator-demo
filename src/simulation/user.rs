@@ -3,7 +3,10 @@ use super::state::Utxo;
 use crate::simulation::bridge::{UserUpdate, WitnessRequest, WitnessResponse};
 use accumulator::group::UnknownOrderGroup;
 use multiqueue::{BroadcastReceiver, BroadcastSender};
+use rand::Rng;
 use std::collections::HashSet;
+use std::thread::sleep;
+use std::time::Duration;
 use uuid::Uuid;
 
 /// A end-user or light-client in our system.
@@ -31,6 +34,8 @@ impl User {
         let mut user = Self { id, utxo_set };
 
         loop {
+            sleep(Duration::from_millis(10));
+
             // Get a UTXO to spend.
             let mut utxos_to_spend = Vec::new();
             utxos_to_spend.push(user.get_input_for_transaction());
@@ -59,13 +64,17 @@ impl User {
                 }
             };
 
-            let new_utxo = Utxo {
-                id: Uuid::new_v4(),
-                user_id: user.id,
-            };
+            let num = rand::thread_rng().gen_range(1, 3);
+            let mut new_utxos = vec![];
+            for _ in 0..num {
+                new_utxos.push(Utxo {
+                    id: Uuid::new_v4(),
+                    user_id: user.id,
+                });
+            }
 
             let new_trans = Transaction {
-                utxos_created: vec![new_utxo],
+                utxos_created: new_utxos,
                 utxos_spent_with_witnesses: response.utxos_with_witnesses,
             };
 

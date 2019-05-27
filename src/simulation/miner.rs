@@ -1,14 +1,14 @@
 use super::state::{Block, Transaction};
 use super::util;
 use accumulator::group::UnknownOrderGroup;
-use accumulator::Accumulator;
+use accumulator::{AccError, Accumulator};
 use multiqueue::{BroadcastReceiver, BroadcastSender};
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
-use std::fmt::Debug;
 
 /// A stateless miner in our system.
 pub struct Miner<G: UnknownOrderGroup, T: Clone + Hash + Debug> {
@@ -39,6 +39,7 @@ impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + Debug + PartialEq + 
         let transaction_thread = thread::spawn(move || {
             for tx in tx_receiver {
                 miner.lock().unwrap().add_transaction(tx);
+                sleep(Duration::from_millis(1));
             }
         });
 
@@ -47,6 +48,7 @@ impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + Debug + PartialEq + 
         let validate_thread = thread::spawn(move || {
             for block in block_receiver {
                 miner.lock().unwrap().validate_block(block);
+                sleep(Duration::from_millis(1));
             }
         });
 
@@ -55,7 +57,11 @@ impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + Debug + PartialEq + 
             loop {
                 sleep(Duration::from_millis(block_interval_ms));
                 let new_block = miner_ref.lock().unwrap().forge_block();
-                block_sender.try_send(new_block).unwrap();
+                if let Ok(block) = new_block {
+                    block_sender.try_send(block).unwrap();
+                } else {
+                    println!("Fail on forging block");
+                }
             }
         }
 
@@ -71,7 +77,7 @@ impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + Debug + PartialEq + 
         }
     }
 
-    fn forge_block(&self) -> Block<G, T> {
+    fn forge_block(&self) -> Result<Block<G, T>, AccError> {
         let (elems_added, elems_deleted) =
             util::elems_from_transactions(&self.pending_transactions);
         println!(
@@ -81,20 +87,24 @@ impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + Debug + PartialEq + 
             elems_deleted.len()
         );
         let (witness_deleted, proof_deleted) =
-            self.acc.clone().delete_with_proof(&elems_deleted).unwrap();
+            self.acc.clone().delete_with_proof(&elems_deleted)?;
         let (acc_new, proof_added) = witness_deleted.clone().add_with_proof(&elems_added);
-        println!("Forged block {}.", self.block_height + 1);
-        Block {
+        let new_block = Block {
             height: self.block_height + 1,
             transactions: self.pending_transactions.clone(),
             acc_new,
             proof_added,
             proof_deleted,
-        }
+        };
+        println!(
+            "No.{} forged block: {:#?}",
+            self.block_height + 1,
+            new_block
+        );
+        Ok(new_block)
     }
 
-    fn validate_block(&mut self, block: Block<G, T>)
-    {
+    fn validate_block(&mut self, block: Block<G, T>) {
         // Preserves idempotency if multiple miners are leaders.
         if block.height != self.block_height + 1 {
             return;
@@ -112,10 +122,9 @@ impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + Debug + PartialEq + 
         assert!(block
             .acc_new
             .verify_membership_batch(&elems_added, &block.proof_added));
-        assert!(block.proof_deleted.witness == block.proof_added.witness);
+        assert_eq!(block.proof_deleted.witness, block.proof_added.witness);
         self.acc = block.acc_new.clone();
         self.block_height = block.height;
         self.pending_transactions.clear();
-        println!("validate_block - block: {:#?}", block);
     }
 }

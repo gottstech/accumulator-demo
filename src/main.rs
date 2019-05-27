@@ -144,7 +144,8 @@ pub fn run_simulation<G: UnknownOrderGroup>() {
                 "Block {} has {} transactions.",
                 block.height,
                 block.transactions.len()
-            )
+            );
+            sleep(Duration::from_millis(10));
         }
     }));
     for thread in simulation_threads {

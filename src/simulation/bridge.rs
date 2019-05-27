@@ -7,6 +7,8 @@ use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::thread::sleep;
+use std::time::Duration;
 use uuid::Uuid;
 
 #[derive(Clone, Debug)]
@@ -67,6 +69,7 @@ impl<G: UnknownOrderGroup> Bridge<G> {
         let update_thread = thread::spawn(move || {
             for block in block_receiver {
                 bridge.lock().unwrap().update(block, &user_update_senders);
+                sleep(Duration::from_millis(10));
             }
         });
 
@@ -82,6 +85,7 @@ impl<G: UnknownOrderGroup> Bridge<G> {
                         utxos_with_witnesses,
                     })
                     .unwrap();
+                sleep(Duration::from_millis(1));
             }
         });
 

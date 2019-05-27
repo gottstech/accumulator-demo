@@ -1,8 +1,8 @@
 use super::state::Transaction;
 use accumulator::group::UnknownOrderGroup;
 use accumulator::Witness;
-use std::hash::Hash;
 use std::fmt::Debug;
+use std::hash::Hash;
 
 #[allow(clippy::type_complexity)]
 /// Extracts the elements added and deleted in a set of `transactions`.

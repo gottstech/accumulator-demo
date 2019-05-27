@@ -1,8 +1,8 @@
 use accumulator::group::UnknownOrderGroup;
 use accumulator::{Accumulator, MembershipProof, Witness};
+use std::fmt::Debug;
 use std::hash::Hash;
 use uuid::Uuid;
-use std::fmt::Debug;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 /// A UTXO, defined by a UUID and the user who owns it. Note that our UTXOs do not have an
