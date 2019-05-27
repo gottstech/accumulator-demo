@@ -21,7 +21,10 @@ rand = "0.6"
 uuid = { version= "0.7.4", features = ["v4"] }
 
 # For Release
-accumulator = { git = "https://github.com/gottstech/accumulator.git", tag = "v0.2.1" }
+#accumulator = { git = "https://github.com/gottstech/accumulator.git", tag = "v0.2.1" }
+
+# For bleeding edge
+accumulator = { git = "https://github.com/gottstech/accumulator.git", branch = "master" }
 
 # For local testing
 #accumulator = { path = "../accumulator", version= "0.2.1"}
