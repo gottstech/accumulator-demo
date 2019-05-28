@@ -71,7 +71,7 @@ impl User {
                 }
             };
 
-            let num = rand::thread_rng().gen_range(1, 3);
+            let num = 1; //rand::thread_rng().gen_range(1, 3);
             let mut new_utxos = vec![];
             for _ in 0..num {
                 new_utxos.push(Utxo {
@@ -87,15 +87,20 @@ impl User {
 
             // Issue a transaction to miners.
             tx_sender.try_send(new_trans).unwrap();
-            println!("User {} for bridge {} issued transaction.", id, bridge_id,);
+            println!(
+                "User {} for bridge {} issued a transaction (1 input + {} output/s).",
+                id, bridge_id, num
+            );
 
             // Keep processing UTXO updates from the bridge until one of them is non-empty (i.e. the
             // one we care about, pertaining to the UTXO we spent).
             loop {
                 match user_update_receiver.try_recv() {
-                    Ok(update) => if !update.is_empty() {
-                        user.update(update);
-                        break;
+                    Ok(update) => {
+                        if !update.is_empty() {
+                            user.update(update);
+                            break;
+                        }
                     }
                     Err(_) => (),
                 }

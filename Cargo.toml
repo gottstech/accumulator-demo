@@ -11,7 +11,7 @@ authors = [
 description = "A demo suite for the accumulator crate."
 keywords = ["cryptography", "demo", "accumulator", "rsa", "vector", "commitment"]
 readme = "README.md"
-repository = "https://github.com/cambrian/accumulator-demo"
+repository = "https://github.com/gottstech/accumulator-demo"
 
 [dependencies]
 gmp-mpfr-sys = "1.1.12"
@@ -21,10 +21,10 @@ rand = "0.6"
 uuid = { version= "0.7.4", features = ["v4"] }
 
 # For Release
-#accumulator = { git = "https://github.com/gottstech/accumulator.git", tag = "v0.2.1" }
+#accumulator = { git = "https://github.com/gottstech/accumulator", tag = "v0.2.1" }
 
 # For bleeding edge
-accumulator = { git = "https://github.com/gottstech/accumulator.git", branch = "master" }
+#accumulator = { git = "https://github.com/gottstech/accumulator", branch = "master" }
 
 # For local testing
-#accumulator = { path = "../accumulator", version= "0.2.1"}
+accumulator = { path = "../accumulator", version= "0.2.1"}

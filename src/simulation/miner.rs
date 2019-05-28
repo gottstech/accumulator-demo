@@ -98,11 +98,11 @@ impl<G: UnknownOrderGroup, T: 'static + Clone + Eq + Hash + Debug + PartialEq + 
             proof_added,
             proof_deleted,
         };
-        println!(
-            "No.{} forged block: {:#?}",
-            self.block_height + 1,
-            new_block
-        );
+//        println!(
+//            "No.{} forged block: {:#?}",
+//            self.block_height + 1,
+//            new_block
+//        );
         Ok(new_block)
     }
 

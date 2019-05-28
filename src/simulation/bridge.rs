@@ -33,7 +33,7 @@ pub struct UserUpdate {
     pub utxos_deleted: Vec<Utxo>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// A bridge node in our system, managing UTXO witnesses for a set of users.
 pub struct Bridge<G: UnknownOrderGroup> {
     bridge_id: usize,
@@ -63,6 +63,10 @@ impl<G: UnknownOrderGroup> Bridge<G> {
             block_height: 0,
             user_ids: user_update_senders.keys().cloned().collect(),
         }));
+
+        {
+            println!("Initial state: {:#?}", bridge_ref.lock().unwrap());
+        }
 
         // Block updater thread.
         let bridge = bridge_ref.clone();
@@ -161,8 +165,8 @@ impl<G: UnknownOrderGroup> Bridge<G> {
         self.block_height = block.height;
 
         println!(
-            "Bridge {} received block {}.",
-            self.bridge_id, self.block_height
+            "Bridge {} received block {}. {:#?}",
+            self.bridge_id, self.block_height, self,
         );
 
         for (user_id, update) in user_updates {

@@ -41,18 +41,25 @@ pub fn run_simulation<G: UnknownOrderGroup>() {
     }
 
     let mut init_acc = Accumulator::<G, Utxo>::empty();
+    println!("initial empty accumulator: {:#?}\n", init_acc);
     init_acc = init_acc.add(&user_utxos);
+    println!("initial accumulator with {} utxo sets: {:#?}\n", NUM_USERS, init_acc);
 
     // Compute initial user witnesses.
     let mut user_witnesses = Vec::new();
     let witness_all = Witness(Accumulator::<G, Utxo>::empty());
+    println!("initial empty witness_all: {:#?}\n", witness_all);
     for user_utxo in &user_utxos {
         let user_witness = witness_all
             .clone()
             .compute_subset_witness(&user_utxos, &[user_utxo.clone()])
             .unwrap();
-        user_witnesses.push(user_witness);
+        user_witnesses.push(user_witness.clone());
+
+        // check if 'user_witness' add 'user_utxo' equal 'init_acc'
+        assert_eq!(user_witness.0.add(&[user_utxo.clone()]), init_acc);
     }
+    println!("initial user witness: {:#?}\n", user_witnesses);
 
     // Initialize bridge threads, each of which manages witnesses for a number of users.
     let mut user_idx = 0;
@@ -69,7 +76,24 @@ pub fn run_simulation<G: UnknownOrderGroup>() {
             .zip(user_witnesses[user_idx..user_idx + num_users_for_bridge].iter())
             .map(|(elem, witness)| (elem.clone(), witness.clone()))
             .collect();
+        println!("bridge {} - user_elem_witnesses: {:#?}\n", bridge_idx, user_elem_witnesses);
+
+        // Bridge initial witness is the accumulator without bridge users's utxo sets
         let bridge_init_witness = Witness(init_acc.clone().delete(&user_elem_witnesses).unwrap());
+        {   // Verify
+            let mut utxos = Vec::new();
+            for user_id in 0..NUM_USERS {
+                match user_id {
+                    d if d >= user_idx && d < (user_idx + num_users_for_bridge) => (),
+                    _ => utxos.push(user_utxos[user_id].clone()),
+                }
+            }
+            let mut acc = Accumulator::<G, Utxo>::empty();
+            acc = acc.add(&utxos);
+            assert_eq!(acc, bridge_init_witness.0);
+        }
+        println!("bridge {} - init_witness: {:#?}\n", bridge_idx, bridge_init_witness);
+
         let bridge_utxo_set: Vec<Utxo> =
             user_utxos[user_idx..user_idx + num_users_for_bridge].to_vec();
 
