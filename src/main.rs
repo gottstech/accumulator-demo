@@ -1,6 +1,6 @@
 //! Simulation runner.
 mod simulation;
-use accumulator::group::{Rsa2048, UnknownOrderGroup};
+use accumulator::group::{Rsa100, UnknownOrderGroup};
 use accumulator::{Accumulator, Witness};
 use multiqueue::{broadcast_queue, BroadcastReceiver, BroadcastSender};
 use simulation::state::Utxo;
@@ -180,5 +180,5 @@ pub fn run_simulation<G: UnknownOrderGroup>() {
 }
 
 pub fn main() {
-    run_simulation::<Rsa2048>();
+    run_simulation::<Rsa100>();
 }
